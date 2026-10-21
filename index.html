@@ -1,194 +1,121 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe</title>
-    <!-- We use Tailwind CSS to make styling easy and clean -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>My Awesome Game</title>
     <style>
-        /* A little custom CSS to make the cells look nice and clicky */
-        .cell {
-            transition: background-color 0.2s ease;
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
         }
 
-        .cell:hover {
-            background-color: #f3f4f6;
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 8px;
         }
     </style>
 </head>
 
-<body class="bg-slate-100 flex items-center justify-center h-screen font-sans">
+<body>
 
-    <div class="bg-white p-8 rounded-xl shadow-lg flex flex-col items-center">
-        <h1 class="text-3xl font-bold mb-4 text-slate-800">Tic-Tac-Toe</h1>
+    <h1>Tic-Tac-Toe</h1>
 
-        <!-- This is where we show whose turn it is or who won -->
-        <h2 id="statusText" class="text-xl mb-6 text-slate-600 font-semibold">Player X's turn</h2>
+    <!-- New Scoreboard Section -->
+    <div class="scoreboard">
+        <div>Player X: <span id="scoreX">0</span></div>
+        <div>Player O: <span id="scoreO">0</span></div>
+        <div>Draws: <span id="scoreDraws">0</span></div>
+    </div>
 
-        <!-- The 3x3 game board -->
-        <div id="board" class="grid grid-cols-3 gap-2 bg-slate-800 p-2 rounded-lg mb-6">
-            <!-- We create 9 cells. They have custom attributes (data-index) to track their position -->
-            <div data-index="0"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="1"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="2"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="3"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="4"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="5"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="6"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="7"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-            <div data-index="8"
-                class="cell w-24 h-24 bg-white text-5xl flex items-center justify-center font-bold text-slate-700 cursor-pointer rounded">
-            </div>
-        </div>
-
-        <!-- The reset button -->
-        <button id="restartBtn"
-            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded shadow transition duration-200">
-            Restart Game
-        </button>
+    <div class="board" id="board">
+        <!-- 9 cells -->
+        <div class="cell" onclick="makeMove(this, 0)"></div>
+        <div class="cell" onclick="makeMove(this, 1)"></div>
+        <div class="cell" onclick="makeMove(this, 2)"></div>
+        <div class="cell" onclick="makeMove(this, 3)"></div>
+        <div class="cell" onclick="makeMove(this, 4)"></div>
+        <div class="cell" onclick="makeMove(this, 5)"></div>
+        <div class="cell" onclick="makeMove(this, 6)"></div>
+        <div class="cell" onclick="makeMove(this, 7)"></div>
+        <div class="cell" onclick="makeMove(this, 8)"></div>
     </div>
 
     <script>
-        // --- GAME LOGIC ---
+        let currentPlayer = 'X';
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let scores = { X: 0, O: 0, Draws: 0 }; // Score tracking
 
-        // Grab references to our HTML elements
-        const cells = document.querySelectorAll('.cell');
-        const statusText = document.querySelector('#statusText');
-        const restartBtn = document.querySelector('#restartBtn');
-
-        // These are the only combinations of cell indexes that win the game
-        const winConditions = [
-            [0, 1, 2], // Top row
-            [3, 4, 5], // Middle row
-            [6, 7, 8], // Bottom row
-            [0, 3, 6], // Left column
-            [1, 4, 7], // Middle column
-            [2, 5, 8], // Right column
-            [0, 4, 8], // Diagonal 1
-            [2, 4, 6]  // Diagonal 2
-        ];
-
-        // Set up our initial game state variables
-        let options = ["", "", "", "", "", "", "", "", ""]; // 9 empty spaces
-        let currentPlayer = "X";
-        let running = false; // Is the game active?
-
-        // Start the game when the script loads
-        initializeGame();
-
-        function initializeGame() {
-            // Add a click listener to every single cell
-            cells.forEach(cell => cell.addEventListener('click', cellClicked));
-            // Add a click listener to the restart button
-            restartBtn.addEventListener('click', restartGame);
-
-            statusText.textContent = `Player ${currentPlayer}'s turn`;
-            running = true;
-        }
-
-        function cellClicked() {
-            // 'this' refers to the specific cell that was clicked
-            const cellIndex = this.getAttribute('data-index');
-
-            // If the cell isn't empty, or the game is over, do nothing
-            if (options[cellIndex] !== "" || !running) {
-                return;
-            }
-
-            // Otherwise, update the cell and check if someone won
-            updateCell(this, cellIndex);
-            checkWinner();
-        }
-
-        function updateCell(cell, index) {
-            // Update our background array
-            options[index] = currentPlayer;
-            // Update the visual text on the screen
-            cell.textContent = currentPlayer;
-
-            // Add a little color coding: X is blue-ish, O is red-ish
-            if (currentPlayer === "X") {
-                cell.classList.add("text-blue-500");
-                cell.classList.remove("text-red-500");
-            } else {
-                cell.classList.add("text-red-500");
-                cell.classList.remove("text-blue-500");
+        function makeMove(cell, index) {
+            if (board[index] === '') {
+                board[index] = currentPlayer;
+                cell.innerText = currentPlayer;
+                checkWin();
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             }
         }
 
-        function changePlayer() {
-            // If it's X, make it O. Otherwise, make it X.
-            currentPlayer = (currentPlayer === "X") ? "O" : "X";
-            statusText.textContent = `Player ${currentPlayer}'s turn`;
-        }
+        function checkWin() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                [0, 4, 8], [2, 4, 6]           // Diagonals
+            ];
 
-        function checkWinner() {
-            let roundWon = false;
-
-            // Loop through every possible winning combination
-            for (let i = 0; i < winConditions.length; i++) {
-                const condition = winConditions[i];
-                const cellA = options[condition[0]];
-                const cellB = options[condition[1]];
-                const cellC = options[condition[2]];
-
-                // If any of the 3 cells in this combination are empty, no one won this combo yet
-                if (cellA === "" || cellB === "" || cellC === "") {
-                    continue;
-                }
-                // If all 3 cells match, we have a winner!
-                if (cellA === cellB && cellB === cellC) {
-                    roundWon = true;
-                    break;
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    alert(board[a] + " wins!");
+                    scores[board[a]]++; // Increase score
+                    updateScoreboard();
+                    resetBoard();
+                    return;
                 }
             }
 
-            if (roundWon) {
-                statusText.textContent = `Player ${currentPlayer} Wins! 🎉`;
-                running = false; // Stop the game
-            }
-            // If there's no winner, but there are no empty spaces left, it's a draw
-            else if (!options.includes("")) {
-                statusText.textContent = `It's a Draw!`;
-                running = false;
-            }
-            // If no one won and there are empty spaces, switch turns
-            else {
-                changePlayer();
+            if (!board.includes('')) {
+                alert("It's a draw!");
+                scores.Draws++;
+                updateScoreboard();
+                resetBoard();
             }
         }
 
-        function restartGame() {
-            // Reset all variables
-            currentPlayer = "X";
-            options = ["", "", "", "", "", "", "", "", ""];
-            statusText.textContent = `Player ${currentPlayer}'s turn`;
+        function updateScoreboard() {
+            document.getElementById('scoreX').innerText = scores.X;
+            document.getElementById('scoreO').innerText = scores.O;
+            document.getElementById('scoreDraws').innerText = scores.Draws;
+        }
 
-            // Clear all text and colors from the HTML cells
-            cells.forEach(cell => {
-                cell.textContent = "";
-                cell.classList.remove("text-blue-500", "text-red-500");
-            });
-
-            running = true;
+        function resetBoard() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            document.querySelectorAll('.cell').forEach(cell => cell.innerText = '');
         }
     </script>
 </body>
